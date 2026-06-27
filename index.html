@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Darktide Mod Settings Merger</title>
+  <style>
+    :root {
+      --bg: #101418;
+      --panel: #171d23;
+      --panel-2: #202833;
+      --text: #e8edf2;
+      --muted: #aab7c4;
+      --border: #33404e;
+      --accent: #89b4ff;
+      --danger: #ff9b9b;
+      --ok: #a8e6a3;
+      --warning: #ffd98a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(137, 180, 255, 0.12), transparent 32rem),
+        var(--bg);
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header {
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      line-height: 1.1;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      margin: 1rem 0 0.4rem;
+      font-size: 1rem;
+    }
+
+    p {
+      color: var(--muted);
+    }
+
+    code {
+      font-family: var(--mono);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.25rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: rgba(23, 29, 35, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1rem;
+      box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.22);
+    }
+
+    .field {
+      margin: 1rem 0;
+    }
+
+    label {
+      display: block;
+      font-weight: 650;
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="file"],
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 0.7rem;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0.8rem;
+    }
+
+    input[type="file"] {
+      cursor: pointer;
+    }
+
+    textarea {
+      min-height: 12rem;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      white-space: pre;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    button,
+    .download-link {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 0.7rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: #07111c;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.6rem;
+    }
+
+    button.secondary,
+    .download-link.secondary {
+      background: #d0dae6;
+    }
+
+    button.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    button:disabled,
+    .download-link[aria-disabled="true"] {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .status {
+      min-height: 1.8rem;
+      margin-top: 0.8rem;
+      font-weight: 650;
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.warn {
+      color: var(--warning);
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    .small {
+      font-size: 0.92rem;
+    }
+
+    .notice {
+      border-left: 4px solid var(--warning);
+      padding: 0.7rem 1rem;
+      background: rgba(255, 217, 138, 0.08);
+      border-radius: 0.5rem;
+      color: var(--text);
+    }
+
+    .mod-list {
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background: var(--panel-2);
+      max-height: 18rem;
+      overflow: auto;
+      padding: 0.35rem;
+    }
+
+    .mod-list.empty {
+      color: var(--muted);
+      padding: 0.8rem;
+      font-style: italic;
+    }
+
+    .mod-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.6rem;
+      align-items: start;
+      padding: 0.45rem 0.5rem;
+      border-radius: 0.55rem;
+    }
+
+    .mod-row:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .mod-row input {
+      margin-top: 0.25rem;
+    }
+
+    .mod-name {
+      overflow-wrap: anywhere;
+    }
+
+    .count {
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    footer {
+      margin-top: 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Darktide Mod Settings Merger</h1>
+    <p>
+      Export or merge selected entries inside <code>mods_settings</code> from
+      Warhammer 40,000: Darktide's <code>user_settings.config</code>.
+      Everything runs locally in your browser.
+    </p>
+  </header>
+
+  <section class="notice small">
+    Close Darktide before replacing <code>user_settings.config</code>. Keep a backup of your original file.
+    Steam path: <code>%AppData%\Fatshark\Darktide\user_settings.config</code>.
+    Microsoft Store path: <code>%AppData%\Fatshark\MicrosoftStore\Darktide\user_settings.config</code>.
+  </section>
+
+  <div class="grid" style="margin-top: 1rem;">
+    <section class="card">
+      <h2>1. Export selected mod settings</h2>
+      <p class="small">
+        Choose your current <code>user_settings.config</code>, select the mods you want to share,
+        then export a small file containing only those entries inside <code>mods_settings</code>.
+      </p>
+
+      <div class="field">
+        <label for="exportInput">Your user_settings.config</label>
+        <input id="exportInput" type="file" accept=".config,.txt,*/*">
+      </div>
+
+      <div class="buttons">
+        <button id="exportSelectAll" class="ghost" type="button">Select all</button>
+        <button id="exportDeselectAll" class="ghost" type="button">Deselect all</button>
+      </div>
+
+      <h3>Mods to export</h3>
+      <div id="exportModsList" class="mod-list empty">Choose a config file to list mods.</div>
+      <div id="exportCount" class="count small"></div>
+
+      <div class="buttons">
+        <button id="exportButton" type="button">Export selected mods</button>
+        <a id="exportDownload" class="download-link secondary" aria-disabled="true">Download shared mod settings</a>
+      </div>
+
+      <div id="exportStatus" class="status"></div>
+
+      <div class="field">
+        <label for="exportOutput">Extracted shared mod settings</label>
+        <textarea id="exportOutput" spellcheck="false" placeholder="Selected mod entries will appear here."></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Import / merge selected mods</h2>
+      <p class="small">
+        Choose your current full config, then choose or paste someone else's shared mod settings.
+        Select which shared mods to merge. Existing matching mods are replaced; missing mods are added.
+      </p>
+
+      <div class="field">
+        <label for="targetInput">Your current user_settings.config</label>
+        <input id="targetInput" type="file" accept=".config,.txt,*/*">
+      </div>
+
+      <div class="field">
+        <label for="sharedInput">Shared mod settings file, optional</label>
+        <input id="sharedInput" type="file" accept=".config,.txt,*/*">
+      </div>
+
+      <div class="field">
+        <label for="sharedPaste">Or paste shared mod settings here</label>
+        <textarea id="sharedPaste" spellcheck="false" placeholder='"A la Mode" = {
+    alm_open_setup = false
+}
+
+or:
+
+mods_settings = {
+    "A la Mode" = {
+        alm_open_setup = false
+    }
+}'></textarea>
+      </div>
+
+      <div class="buttons">
+        <button id="loadSharedButton" class="secondary" type="button">List shared mods</button>
+        <button id="importSelectAll" class="ghost" type="button">Select all</button>
+        <button id="importDeselectAll" class="ghost" type="button">Deselect all</button>
+      </div>
+
+      <h3>Shared mods to merge</h3>
+      <div id="importModsList" class="mod-list empty">Load or paste shared mod settings to list mods.</div>
+      <div id="importCount" class="count small"></div>
+
+      <div class="buttons">
+        <button id="mergeButton" type="button">Create merged config</button>
+        <a id="mergedDownload" class="download-link secondary" aria-disabled="true">Download merged user_settings.config</a>
+      </div>
+
+      <div id="mergeStatus" class="status"></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top: 1rem;">
+    <h2>Merged result preview</h2>
+    <textarea id="mergedOutput" spellcheck="false" placeholder="Merged file preview will appear here."></textarea>
+  </section>
+
+  <footer>
+    This page does not upload files anywhere. It uses the browser File API to read files you select and a Blob download for the output.
+  </footer>
+</main>
+
+<script>
+'use strict';
+
+const MODS_BLOCK_NAME = 'mods_settings';
+
+const exportInput = document.getElementById('exportInput');
+const exportButton = document.getElementById('exportButton');
+const exportOutput = document.getElementById('exportOutput');
+const exportDownload = document.getElementById('exportDownload');
+const exportStatus = document.getElementById('exportStatus');
+const exportModsList = document.getElementById('exportModsList');
+const exportCount = document.getElementById('exportCount');
+const exportSelectAll = document.getElementById('exportSelectAll');
+const exportDeselectAll = document.getElementById('exportDeselectAll');
+
+const targetInput = document.getElementById('targetInput');
+const sharedInput = document.getElementById('sharedInput');
+const sharedPaste = document.getElementById('sharedPaste');
+const loadSharedButton = document.getElementById('loadSharedButton');
+const importModsList = document.getElementById('importModsList');
+const importCount = document.getElementById('importCount');
+const importSelectAll = document.getElementById('importSelectAll');
+const importDeselectAll = document.getElementById('importDeselectAll');
+const mergeButton = document.getElementById('mergeButton');
+const mergedDownload = document.getElementById('mergedDownload');
+const mergedOutput = document.getElementById('mergedOutput');
+const mergeStatus = document.getElementById('mergeStatus');
+
+let exportUrl = null;
+let mergedUrl = null;
+
+let exportState = {
+  text: '',
+  modsBlock: null,
+  mods: []
+};
+
+let importState = {
+  text: '',
+  modsBlock: null,
+  mods: []
+};
+
+function setStatus(el, message, type) {
+  el.textContent = message || '';
+  el.className = 'status' + (type ? ' ' + type : '');
+}
+
+function clearDownload(link, urlRefName) {
+  if (urlRefName === 'export' && exportUrl) {
+    URL.revokeObjectURL(exportUrl);
+    exportUrl = null;
+  }
+  if (urlRefName === 'merged' && mergedUrl) {
+    URL.revokeObjectURL(mergedUrl);
+    mergedUrl = null;
+  }
+
+  link.removeAttribute('href');
+  link.removeAttribute('download');
+  link.setAttribute('aria-disabled', 'true');
+}
+
+function setDownload(link, filename, content, urlRefName) {
+  clearDownload(link, urlRefName);
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  if (urlRefName === 'export') {
+    exportUrl = url;
+  }
+  if (urlRefName === 'merged') {
+    mergedUrl = url;
+  }
+
+  link.href = url;
+  link.download = filename;
+  link.removeAttribute('aria-disabled');
+}
+
+function readSelectedFile(input) {
+  return new Promise((resolve, reject) => {
+    const file = input.files && input.files[0];
+
+    if (!file) {
+      reject(new Error('Choose a file first.'));
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(new Error('Could not read the selected file.'));
+
+    reader.readAsText(file);
+  });
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function detectNewline(text) {
+  return text.includes('\r\n') ? '\r\n' : '\n';
+}
+
+function isWhitespace(ch) {
+  return ch === ' ' || ch === '\t' || ch === '\r' || ch === '\n';
+}
+
+function isHorizontalWhitespace(ch) {
+  return ch === ' ' || ch === '\t';
+}
+
+function findLineEnd(text, pos, limit) {
+  let i = pos;
+  while (i < limit && text[i] !== '\r' && text[i] !== '\n') {
+    i++;
+  }
+  return i;
+}
+
+function parseQuotedString(text, start, limit) {
+  if (text[start] !== '"') {
+    throw new Error('Expected quoted string.');
+  }
+
+  let escaped = false;
+
+  for (let i = start + 1; i < limit; i++) {
+    const ch = text[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (ch === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      return {
+        value: text.slice(start + 1, i).replace(/\\"/g, '"').replace(/\\\\/g, '\\'),
+        end: i + 1,
+        raw: text.slice(start, i + 1)
+      };
+    }
+  }
+
+  throw new Error('Could not find closing quote.');
+}
+
+function findMatchingBrace(text, openBrace, limit = text.length) {
+  if (text[openBrace] !== '{') {
+    throw new Error('Expected opening brace.');
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = openBrace; i < limit; i++) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+
+      if (ch === '"') {
+        inString = false;
+        continue;
+      }
+
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (ch === '{') {
+      depth++;
+      continue;
+    }
+
+    if (ch === '}') {
+      depth--;
+
+      if (depth === 0) {
+        return i;
+      }
+
+      if (depth < 0) {
+        throw new Error('Brace parsing failed.');
+      }
+    }
+  }
+
+  throw new Error('Could not find closing brace.');
+}
+
+function findNamedBlock(text, name) {
+  const re = new RegExp('(^|\\r?\\n)[\\t ]*' + escapeRegExp(name) + '[\\t ]*=[\\t ]*\\{', 'm');
+  const match = re.exec(text);
+
+  if (!match) {
+    return null;
+  }
+
+  const start = match.index + match[1].length;
+  const openBrace = text.indexOf('{', start);
+
+  if (openBrace === -1) {
+    throw new Error(`Found "${name}" but could not find its opening brace.`);
+  }
+
+  const closeBrace = findMatchingBrace(text, openBrace);
+
+  let end = closeBrace + 1;
+  while (end < text.length && (text[end] === '\r' || text[end] === '\n')) {
+    end++;
+  }
+
+  return {
+    name,
+    start,
+    openBrace,
+    contentStart: openBrace + 1,
+    closeBrace,
+    end,
+    block: text.slice(start, end)
+  };
+}
+
+function wrapLooseModsSettingsIfNeeded(text) {
+  if (findNamedBlock(text, MODS_BLOCK_NAME)) {
+    return text;
+  }
+
+  return `${MODS_BLOCK_NAME} = {\n${text.trim()}\n}\n`;
+}
+
+function parseDirectAssignments(text, block) {
+  const entries = [];
+  const limit = block.closeBrace;
+  let i = block.contentStart;
+
+  while (i < limit) {
+    let lineStart = i;
+
+    while (i < limit && isWhitespace(text[i])) {
+      if (text[i] === '\r') {
+        if (text[i + 1] === '\n') {
+          i++;
+        }
+        lineStart = i + 1;
+      } else if (text[i] === '\n') {
+        lineStart = i + 1;
+      }
+      i++;
+    }
+
+    if (i >= limit) {
+      break;
+    }
+
+    const entryStart = lineStart;
+    const keyStart = i;
+    let keyName = '';
+    let keyRaw = '';
+
+    if (text[i] === '"') {
+      const parsed = parseQuotedString(text, i, limit);
+      keyName = parsed.value;
+      keyRaw = parsed.raw;
+      i = parsed.end;
+    } else {
+      while (i < limit && text[i] !== '=' && text[i] !== '\r' && text[i] !== '\n') {
+        i++;
+      }
+
+      keyRaw = text.slice(keyStart, i).trim();
+      keyName = keyRaw;
+    }
+
+    while (i < limit && isWhitespace(text[i]) && text[i] !== '\r' && text[i] !== '\n') {
+      i++;
+    }
+
+    if (text[i] !== '=') {
+      const nextLine = findLineEnd(text, i, limit);
+      i = nextLine + 1;
+      continue;
+    }
+
+    i++;
+
+    while (i < limit && isWhitespace(text[i])) {
+      i++;
+    }
+
+    let valueEnd = i;
+
+    if (text[i] === '{') {
+      valueEnd = findMatchingBrace(text, i, limit) + 1;
+    } else if (text[i] === '"') {
+      valueEnd = parseQuotedString(text, i, limit).end;
+      valueEnd = findLineEnd(text, valueEnd, limit);
+    } else {
+      valueEnd = findLineEnd(text, i, limit);
+    }
+
+    let entryEnd = valueEnd;
+
+    while (entryEnd < limit && isHorizontalWhitespace(text[entryEnd])) {
+      entryEnd++;
+    }
+
+    if (entryEnd < limit && text[entryEnd] === '\r') {
+      entryEnd++;
+      if (entryEnd < limit && text[entryEnd] === '\n') {
+        entryEnd++;
+      }
+    } else if (entryEnd < limit && text[entryEnd] === '\n') {
+      entryEnd++;
+    }
+
+    const raw = text.slice(entryStart, entryEnd).trimEnd();
+    const firstLine = raw.split(/\r\n|\n|\r/)[0] || '';
+    const indent = (firstLine.match(/^[\t ]*/) || [''])[0];
+
+    entries.push({
+      name: keyName,
+      keyRaw,
+      start: entryStart,
+      end: entryEnd,
+      raw,
+      indent
+    });
+
+    i = entryEnd;
+  }
+
+  return entries;
+}
+
+function parseModsSettingsFromText(text, allowLoose) {
+  const preparedText = allowLoose ? wrapLooseModsSettingsIfNeeded(text) : text;
+  const modsBlock = findNamedBlock(preparedText, MODS_BLOCK_NAME);
+
+  if (!modsBlock) {
+    throw new Error(`Could not find "${MODS_BLOCK_NAME}" in the selected file/text.`);
+  }
+
+  const mods = parseDirectAssignments(preparedText, modsBlock);
+
+  return {
+    text: preparedText,
+    modsBlock,
+    mods
+  };
+}
+
+function getSelectedNames(container) {
+  return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(input => input.value);
+}
+
+function setAllCheckboxes(container, checked) {
+  for (const input of container.querySelectorAll('input[type="checkbox"]')) {
+    input.checked = checked;
+  }
+}
+
+function renderModList(container, countEl, mods, idPrefix) {
+  container.innerHTML = '';
+
+  if (!mods.length) {
+    container.className = 'mod-list empty';
+    container.textContent = 'No mods found in mods_settings.';
+    countEl.textContent = '';
+    return;
+  }
+
+  container.className = 'mod-list';
+
+  const seen = new Set();
+
+  for (const mod of mods) {
+    const row = document.createElement('label');
+    row.className = 'mod-row';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    checkbox.value = mod.name;
+    checkbox.id = `${idPrefix}-${seen.size}`;
+
+    if (seen.has(mod.name)) {
+      checkbox.dataset.duplicate = 'true';
+    }
+    seen.add(mod.name);
+
+    const name = document.createElement('span');
+    name.className = 'mod-name';
+    name.textContent = mod.name || '(unnamed entry)';
+
+    row.appendChild(checkbox);
+    row.appendChild(name);
+    container.appendChild(row);
+  }
+
+  countEl.textContent = `${mods.length} mod entr${mods.length === 1 ? 'y' : 'ies'} found.`;
+}
+
+function stripTopLevelIndent(raw) {
+  const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimEnd();
+  const lines = normalized.split('\n');
+
+  while (lines.length && lines[lines.length - 1].trim() === '') {
+    lines.pop();
+  }
+
+  const firstNonEmpty = lines.find(line => line.trim() !== '') || '';
+  const topIndent = (firstNonEmpty.match(/^[\t ]*/) || [''])[0];
+
+  return lines.map(line => {
+    if (line.trim() === '') {
+      return '';
+    }
+
+    return line.startsWith(topIndent) ? line.slice(topIndent.length) : line;
+  }).join('\n');
+}
+
+function normalizeEntry(raw, indent, newline) {
+  const stripped = stripTopLevelIndent(raw);
+  const lines = stripped.split('\n');
+
+  return lines.map(line => {
+    if (line.trim() === '') {
+      return '';
+    }
+
+    return indent + line;
+  }).join(newline) + newline;
+}
+
+function createModsSettingsFile(entries, sourceText) {
+  const newline = detectNewline(sourceText);
+  const body = entries
+    .map(entry => normalizeEntry(entry.raw, '\t', newline))
+    .join('');
+
+  return `${MODS_BLOCK_NAME} = {${newline}${body}}${newline}`;
+}
+
+function getDefaultModIndent(entries) {
+  if (entries.length && entries[0].indent) {
+    return entries[0].indent;
+  }
+
+  return '\t';
+}
+
+function dedupeSelectedEntries(mods, selectedNames) {
+  const selected = new Set(selectedNames);
+  const result = [];
+  const used = new Set();
+
+  for (const mod of mods) {
+    if (selected.has(mod.name) && !used.has(mod.name)) {
+      result.push(mod);
+      used.add(mod.name);
+    }
+  }
+
+  return result;
+}
+
+function mergeSelectedMods(targetText, sourceMods, selectedNames) {
+  const newline = detectNewline(targetText);
+  let result = targetText;
+
+  const selectedEntries = dedupeSelectedEntries(sourceMods, selectedNames);
+
+  if (!selectedEntries.length) {
+    throw new Error('No shared mods were selected.');
+  }
+
+  let targetParsed = null;
+
+  try {
+    targetParsed = parseModsSettingsFromText(result, false);
+  } catch (error) {
+    targetParsed = null;
+  }
+
+  if (!targetParsed) {
+    const entriesText = selectedEntries
+      .map(entry => normalizeEntry(entry.raw, '\t', newline))
+      .join('');
+
+    const separator = result.trimEnd().length ? newline + newline : '';
+    result = result.trimEnd() + separator + `${MODS_BLOCK_NAME} = {${newline}${entriesText}}${newline}`;
+
+    return {
+      result,
+      replaced: [],
+      added: selectedEntries.map(entry => entry.name),
+      createdBlock: true
+    };
+  }
+
+  let replaced = [];
+  let added = [];
+
+  const targetMap = new Map();
+  for (const entry of targetParsed.mods) {
+    if (!targetMap.has(entry.name)) {
+      targetMap.set(entry.name, entry);
+    }
+  }
+
+  const replacements = [];
+
+  for (const sourceEntry of selectedEntries) {
+    const targetEntry = targetMap.get(sourceEntry.name);
+
+    if (targetEntry) {
+      replacements.push({
+        start: targetEntry.start,
+        end: targetEntry.end,
+        text: normalizeEntry(sourceEntry.raw, targetEntry.indent || getDefaultModIndent(targetParsed.mods), newline)
+      });
+      replaced.push(sourceEntry.name);
+    } else {
+      added.push(sourceEntry.name);
+    }
+  }
+
+  replacements.sort((a, b) => b.start - a.start);
+
+  for (const replacement of replacements) {
+    result = result.slice(0, replacement.start) + replacement.text + result.slice(replacement.end);
+  }
+
+  if (added.length) {
+    targetParsed = parseModsSettingsFromText(result, false);
+
+    const currentIndent = getDefaultModIndent(targetParsed.mods);
+    const addedEntriesText = selectedEntries
+      .filter(entry => added.includes(entry.name))
+      .map(entry => normalizeEntry(entry.raw, currentIndent, newline))
+      .join('');
+
+    const beforeClose = result.slice(0, targetParsed.modsBlock.closeBrace);
+    const afterClose = result.slice(targetParsed.modsBlock.closeBrace);
+
+    result =
+      beforeClose +
+      (beforeClose.endsWith('\n') ? '' : newline) +
+      addedEntriesText +
+      afterClose;
+  }
+
+  return {
+    result,
+    replaced,
+    added,
+    createdBlock: false
+  };
+}
+
+async function loadExportMods() {
+  clearDownload(exportDownload, 'export');
+  exportOutput.value = '';
+
+  const text = await readSelectedFile(exportInput);
+  exportState = parseModsSettingsFromText(text, false);
+
+  renderModList(exportModsList, exportCount, exportState.mods, 'export-mod');
+
+  if (exportState.mods.length) {
+    setStatus(exportStatus, `Loaded ${exportState.mods.length} mod entr${exportState.mods.length === 1 ? 'y' : 'ies'} from mods_settings.`, 'ok');
+  } else {
+    setStatus(exportStatus, 'mods_settings was found, but it did not contain any mod entries.', 'warn');
+  }
+}
+
+async function loadImportModsFromPaste() {
+  clearDownload(mergedDownload, 'merged');
+  mergedOutput.value = '';
+
+  const sourceText = sharedPaste.value.trim();
+
+  if (!sourceText) {
+    throw new Error('Choose or paste shared mod settings first.');
+  }
+
+  importState = parseModsSettingsFromText(sourceText, true);
+  renderModList(importModsList, importCount, importState.mods, 'import-mod');
+
+  if (importState.mods.length) {
+    setStatus(mergeStatus, `Loaded ${importState.mods.length} shared mod entr${importState.mods.length === 1 ? 'y' : 'ies'}.`, 'ok');
+  } else {
+    setStatus(mergeStatus, 'Shared mods_settings was found, but it did not contain any mod entries.', 'warn');
+  }
+}
+
+exportInput.addEventListener('change', async () => {
+  try {
+    await loadExportMods();
+  } catch (error) {
+    exportState = { text: '', modsBlock: null, mods: [] };
+    renderModList(exportModsList, exportCount, [], 'export-mod');
+    setStatus(exportStatus, error.message, 'error');
+  }
+});
+
+sharedInput.addEventListener('change', async () => {
+  if (!sharedInput.files || !sharedInput.files[0]) {
+    return;
+  }
+
+  try {
+    sharedPaste.value = await readSelectedFile(sharedInput);
+    await loadImportModsFromPaste();
+  } catch (error) {
+    importState = { text: '', modsBlock: null, mods: [] };
+    renderModList(importModsList, importCount, [], 'import-mod');
+    setStatus(mergeStatus, error.message, 'error');
+  }
+});
+
+loadSharedButton.addEventListener('click', async () => {
+  try {
+    await loadImportModsFromPaste();
+  } catch (error) {
+    importState = { text: '', modsBlock: null, mods: [] };
+    renderModList(importModsList, importCount, [], 'import-mod');
+    setStatus(mergeStatus, error.message, 'error');
+  }
+});
+
+exportSelectAll.addEventListener('click', () => setAllCheckboxes(exportModsList, true));
+exportDeselectAll.addEventListener('click', () => setAllCheckboxes(exportModsList, false));
+importSelectAll.addEventListener('click', () => setAllCheckboxes(importModsList, true));
+importDeselectAll.addEventListener('click', () => setAllCheckboxes(importModsList, false));
+
+exportButton.addEventListener('click', async () => {
+  try {
+    setStatus(exportStatus, '', '');
+    clearDownload(exportDownload, 'export');
+
+    if (!exportState.mods.length) {
+      await loadExportMods();
+    }
+
+    const selectedNames = getSelectedNames(exportModsList);
+    const selectedEntries = dedupeSelectedEntries(exportState.mods, selectedNames);
+
+    if (!selectedEntries.length) {
+      exportOutput.value = '';
+      setStatus(exportStatus, 'Select at least one mod to export.', 'error');
+      return;
+    }
+
+    const output = createModsSettingsFile(selectedEntries, exportState.text);
+    exportOutput.value = output;
+    setDownload(exportDownload, 'darktide_mod_settings.config', output, 'export');
+
+    setStatus(
+      exportStatus,
+      `Exported ${selectedEntries.length} selected mod entr${selectedEntries.length === 1 ? 'y' : 'ies'}.`,
+      'ok'
+    );
+  } catch (error) {
+    exportOutput.value = '';
+    setStatus(exportStatus, error.message, 'error');
+  }
+});
+
+mergeButton.addEventListener('click', async () => {
+  try {
+    setStatus(mergeStatus, '', '');
+    clearDownload(mergedDownload, 'merged');
+
+    if (!importState.mods.length) {
+      await loadImportModsFromPaste();
+    }
+
+    const targetText = await readSelectedFile(targetInput);
+    const selectedNames = getSelectedNames(importModsList);
+
+    const merge = mergeSelectedMods(targetText, importState.mods, selectedNames);
+
+    mergedOutput.value = merge.result;
+    setDownload(mergedDownload, 'user_settings.config', merge.result, 'merged');
+
+    const parts = [];
+
+    if (merge.createdBlock) {
+      parts.push('created mods_settings');
+    }
+
+    if (merge.replaced.length) {
+      parts.push(`replaced ${merge.replaced.length}`);
+    }
+
+    if (merge.added.length) {
+      parts.push(`added ${merge.added.length}`);
+    }
+
+    setStatus(
+      mergeStatus,
+      `Merged successfully: ${parts.join(', ')} mod entr${merge.replaced.length + merge.added.length === 1 ? 'y' : 'ies'}.`,
+      'ok'
+    );
+  } catch (error) {
+    mergedOutput.value = '';
+    setStatus(mergeStatus, error.message, 'error');
+  }
+});
+
+window.addEventListener('beforeunload', () => {
+  if (exportUrl) URL.revokeObjectURL(exportUrl);
+  if (mergedUrl) URL.revokeObjectURL(mergedUrl);
+});
+</script>
+</body>
+</html>
